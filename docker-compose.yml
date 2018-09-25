@@ -4,10 +4,10 @@ services:
     build: .
     image: sba-certificate-renewal
     environment:
-    #- AWS_PROFILE=hz-lower
-    #- CERT_BUCKET_NAME=my-bucket-with-the-certs
-    #- CERT_BUCKET_PATH=/my/path/to/the/certs/
-    #- CERT_HOSTNAME=hostname.to.register
+    - CERT_BUCKET_NAME=my-bucket-to-store-certs
+    - CERT_BUCKET_PATH=/my/path/to/the/certs/
+    - CERT_HOSTNAME=hostname.to.register.example.org
+    #- AWS_PROFILE=my-nondefault-profile
     #- DRY_RUN=true
     #volumes:
     #- "~/.aws:/root/.aws"
