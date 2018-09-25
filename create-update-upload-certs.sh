@@ -2,12 +2,12 @@
 
 CERT_REGISTRATION_EMAIL=${CERT_REGISTRATION_EMAIL:-digital@sba.gov}
 CERT_RENEW_ONLY=${CERT_RENEW_ONLY:-false}
+LETS_ENCRYPT_DIRECTORY=/etc/letsencrypt
 
 # Wildcard options
 CERT_REGISTER_WILDARD=${CERT_REGISTER_WILDARD:-true}
 CERT_REGISTER_WILDARD_CMD=""
 [ "${CERT_REGISTER_WILDARD}" == "true" ] && CERT_REGISTER_WILDARD_CMD="-d *.${CERT_HOSTNAME}"
-echo CERT_REGISTER_WILDARD_CMD=$CERT_REGISTER_WILDARD_CMD
 
 # Dry run options
 DRY_RUN=${DRY_RUN:-false}
@@ -33,23 +33,29 @@ touch test_write.txt
 aws s3 cp ./test_write.txt "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}test_write.txt"
 
 # Sync s3 to local
-aws s3 sync --no-progress "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}" /etc/letsencrypt/
-#mkdir -p /etc/letsencrypt/ && cp -r /mnt/certs/* /etc/letsencrypt/
-
-# Symlink live directory
-if [ -d "/etc/letsencrypt/archive/" ]; then
-  sed -i "s/\(\/etc\/letsencrypt\/live\/.*[^1]\).pem$/\11.pem/" /etc/letsencrypt/renewal/*.conf
-  ls -1 /etc/letsencrypt/archive/ | xargs -n 1 linkcert.sh
-fi
+aws s3 sync --exclude "${CERT_BUCKET_PATH}live/*" --no-progress "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}" $LETS_ENCRYPT_DIRECTORY/
+#mkdir -p $LETS_ENCRYPT_DIRECTORY/ && cp -r /mnt/certs/* $LETS_ENCRYPT_DIRECTORY/
 
 # Issue or renew cert
-if [ "${CERT_RENEW_ONLY}" == "true" ]; then
-  echo "CERT_RENEW_ONLY mode.  New certifciates will not be registered, only the renewal of existing certs"
-  certbot ${DRY_RUN_CMD} renew
+if [ -d "$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}" ] && [ ! -L "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/privkey.pem" ] ; then
+  echo "Archive directory [$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}] found, attempting to renew existing certs"
+  CERT_VERSION=$(ls -1vr "$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/" | head -1 | sed "s/privkey\([0-9]\+\).pem/\1/")
+  mkdir -p "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}"
+  ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/privkey${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/privkey.pem
+  ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/fullchain${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/fullchain.pem
+  ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/chain${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/chain.pem
+  ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/cert${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/cert.pem
 else
-  echo "Create or Renew mode.  New certificates will be created; old certs will be renewed if needed."
-  certbot ${DRY_RUN_CMD} certonly -n --agree-tos --email "${CERT_REGISTRATION_EMAIL}" --dns-route53 -d "${CERT_HOSTNAME}" ${CERT_REGISTER_WILDARD_CMD}
+  echo "Archive directory [$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}] not found, creating new cert"
+  certbot certonly ${DRY_RUN_CMD} -n --agree-tos --email "${CERT_REGISTRATION_EMAIL}" --dns-route53 -d "${CERT_HOSTNAME}" ${CERT_REGISTER_WILDARD_CMD}
 fi
 
+# Copy live certs to latest directory
+mkdir -p $LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}
+cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/privkey.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/privatekey.pem"
+cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/cert.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/publiccert.pem"
+cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/fullchain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/cachainfull.pem"
+cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/chain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/cachainshort.pem"
+
 # Sync local to s3
-aws s3 sync --no-progress --exclude "live/*" /etc/letsencrypt/ "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}"
+aws s3 sync --no-progress --exclude "live/*" $LETS_ENCRYPT_DIRECTORY/ "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}"
