@@ -45,6 +45,7 @@ if [ -d "$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}" ] && [ ! -L "$LETS_EN
   ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/fullchain${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/fullchain.pem
   ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/chain${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/chain.pem
   ln -s $LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}/cert${CERT_VERSION}.pem $LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/cert.pem
+  certbot renew ${DRY_RUN_CMD}
 else
   echo "Archive directory [$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}] not found, creating new cert"
   certbot certonly ${DRY_RUN_CMD} -n --agree-tos --email "${CERT_REGISTRATION_EMAIL}" --dns-route53 -d "${CERT_HOSTNAME}" ${CERT_REGISTER_WILDARD_CMD}
