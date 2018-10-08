@@ -30,6 +30,7 @@ fi
 # Test bucket access
 touch test_write.txt
 aws s3 cp ./test_write.txt "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}test_write.txt"
+aws s3 rm "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}test_write.txt"
 
 # Sync s3 to local
 aws s3 sync --exclude "${CERT_BUCKET_PATH}live/*" --no-progress "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}" $LETS_ENCRYPT_DIRECTORY/
@@ -56,8 +57,8 @@ then
   mkdir -p $LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}
   cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/privkey.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/privatekey.pem"
   cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/cert.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/publiccert.pem"
-  cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/fullchain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/cachainfull.pem"
-  cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/chain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/cachainshort.pem"
+  cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/fullchain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/publiccert-fullchain.pem"
+  cp -a "$LETS_ENCRYPT_DIRECTORY/live/${CERT_HOSTNAME}/chain.pem" "$LETS_ENCRYPT_DIRECTORY/latest/${CERT_HOSTNAME}/cachain.pem"
 
   # Sync local to s3
   aws s3 sync --no-progress --exclude "live/*" $LETS_ENCRYPT_DIRECTORY/ "s3://${CERT_BUCKET_NAME}${CERT_BUCKET_PATH}"
