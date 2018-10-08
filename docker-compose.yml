@@ -2,7 +2,7 @@ version: '3'
 services:
   certbot:
     build: .
-    image: shared/sba-certificate-renewal
+    image: ussba/sba-certificate-renewal
     environment:
     - CERT_BUCKET_NAME=my-bucket-to-store-certs
     - CERT_BUCKET_PATH=/my/path/to/the/certs/
