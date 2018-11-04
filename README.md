@@ -39,7 +39,7 @@ We welcome contributions. Please read [CONTRIBUTING](CONTRIBUTING.md) for how to
 
 ### Code Of Conduct
 
-We strive for a welcoming and inclusive environment for the SBA VUI project.
+We strive for a welcoming and inclusive environment for all SBA projects.
 
 Please follow this guidelines in all interactions:
 
