@@ -21,6 +21,7 @@ The script offers a number of environment variables:
 | DRY_RUN                 | `false` | Whether or not to perform a dry-run with certbot.  In many cases, dns validation will still be performed, but no certificates will be generated                                                                                            | `true` or `false`          |
 | CERT_REGISTRATION_EMAIL |         | The email address under which the LetsEncrypt certificate will be created.                                                                                                                                                                 | `admin@example.org`        |
 | CERT_REGISTER_WILDCARD  | true    | Whether or not a wildcard certificate should be requested.  `true` will result in a certificate with "my.subdomain.example.com" AND "*.my.subdomain.example.com".  `false` would create a certfiicate with just "my.subdomain.example.com" | `true` or `false`          |
+| SNS_TOPIC_ARN           |         | What SNS Topic ARN should be used for notifying about successful renewals, or failures of any kind.  If no ARN is provided, no SNS messages will be attempted.                                                           | `arn:aws:sns:us-east-2:123456789012:MyTopic` |
 
 ### Running Locally
 

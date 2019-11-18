@@ -1,7 +1,8 @@
 FROM certbot/dns-route53:latest
 
 RUN apk --no-cache add bash
-RUN pip install awscli "botocore<1.12" "boto3<1.9"
+RUN pip install boto3 --upgrade
+RUN pip install awscli --upgrade
 
 COPY create-update-upload-certs.sh /usr/bin/
 RUN chmod +x /usr/bin/create-update-upload-certs.sh
