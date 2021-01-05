@@ -22,6 +22,7 @@ The script offers a number of environment variables:
 | CERT_REGISTRATION_EMAIL |         | The email address under which the LetsEncrypt certificate will be created.                                                                                                                                                                 | `admin@example.org`        |
 | CERT_REGISTER_WILDCARD  | true    | Whether or not a wildcard certificate should be requested.  `true` will result in a certificate with "my.subdomain.example.com" AND "*.my.subdomain.example.com".  `false` would create a certfiicate with just "my.subdomain.example.com" | `true` or `false`          |
 | SNS_TOPIC_ARN           |         | What SNS Topic ARN should be used for notifying about successful renewals, or failures of any kind.  If no ARN is provided, no SNS messages will be attempted.                                                           | `arn:aws:sns:us-east-2:123456789012:MyTopic` |
+| CERT_ADDITIONAL_HOSTNAMES |         | A comma separated list of alternate domain names to add to a certificate. | `foo.my.subdomain.example.com,*.bar.my.subdomain.example.com` |
 
 ### Running Locally
 
