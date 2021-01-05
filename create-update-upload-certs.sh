@@ -9,6 +9,10 @@ CERT_REGISTER_WILDCARD=${CERT_REGISTER_WILDCARD:-true}
 CERT_REGISTER_WILDCARD_CMD=""
 [ "${CERT_REGISTER_WILDCARD}" == "true" ] && CERT_REGISTER_WILDCARD_CMD="-d *.${CERT_HOSTNAME}"
 
+# Additional Hostnames Options
+CERT_ADDITIONAL_HOSTNAMES_CMD=""
+[ "${CERT_ADDITIONAL_HOSTNAMES}" != "" ] && CERT_ADDITIONAL_HOSTNAMES_CMD=$(echo ${CERT_ADDITIONAL_HOSTNAMES} | sed 's/^/-d /' | sed 's/, */ -d /') && echo "Additional Cert Hostnames Command: '$CERT_ADDITIONAL_HOSTNAMES_CMD'"
+
 # Dry run options
 DRY_RUN=${DRY_RUN:-false}
 DRY_RUN_CMD=""
@@ -16,11 +20,13 @@ DRY_RUN_CMD=""
 function exit_with_failure() {
   exit_code=$1
   message=$2
-  echo "FATAL: Failed to renew LetsEncrypt certificate for host ${CERT_HOSTNAME}. ${message}"
   [ ! -z "$SNS_TOPIC_ARN" ] && aws sns publish \
     --topic-arn ${SNS_TOPIC_ARN} \
     --message "Automated LetsEncrypt Cert Renewal: ${CERT_HOSTNAME} - FAILURE.  Failed to renew LetsEncrypt certificate for host ${CERT_HOSTNAME}.  ${message}" \
     --subject "Automated LetsEncrypt Cert Renewal: ${CERT_HOSTNAME} - FAILURE"
+  echo "A fatal error has occurred. Attempting to show the logs after failure..."
+  cat /var/log/letsencrypt/letsencrypt.log || echo "ERROR: Could not find logs"
+  echo "FATAL: Failed to renew LetsEncrypt certificate for host ${CERT_HOSTNAME}. ${message}"
   exit "${exit_code}"
 }
 
@@ -63,7 +69,7 @@ if [ -d "$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}" ] && [ ! -L "$LETS_EN
   certbot renew --deploy-hook "${DEPLOY_HOOK_PATH}" ${DRY_RUN_CMD} || exit_with_failure 80 "certbot renew command failed.  There is likely an expiring cert that can't be renewed.  ACTION IS NECESSARY! Check the logs"
 else
   echo "Archive directory [$LETS_ENCRYPT_DIRECTORY/archive/${CERT_HOSTNAME}] not found, creating new cert"
-  certbot certonly ${DRY_RUN_CMD} -n --agree-tos --email "${CERT_REGISTRATION_EMAIL}" --dns-route53 -d "${CERT_HOSTNAME}" ${CERT_REGISTER_WILDCARD_CMD} || exit_with_failure 90 "certbot failed to create an initial certificate. ACTION IS NECESSARY! Check the logs"
+  certbot certonly ${DRY_RUN_CMD} -n --agree-tos --email "${CERT_REGISTRATION_EMAIL}" --dns-route53 -d "${CERT_HOSTNAME}" ${CERT_REGISTER_WILDCARD_CMD} ${CERT_ADDITIONAL_HOSTNAMES_CMD} || exit_with_failure 90 "certbot failed to create an initial certificate. ACTION IS NECESSARY! Check the logs"
 fi
 
 # Copy live certs to latest directory
